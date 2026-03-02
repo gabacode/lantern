@@ -1,0 +1,269 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #111;
+  color: #eee;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: #1a1a1a;
+  border-right: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+}
+
+#sidebar h1 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #fff;
+}
+
+#discover-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+#discover-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+#discover-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+#spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff44;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#light-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.light-card {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.light-card:hover {
+  border-color: #555;
+}
+.light-card.selected {
+  border-color: #2563eb;
+}
+
+.light-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.light-mac {
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: #aaa;
+}
+
+.badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge.connected {
+  background: #166534;
+  color: #86efac;
+}
+.badge.disconnected {
+  background: #3a1f1f;
+  color: #f87171;
+}
+
+.connect-btn {
+  width: 100%;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.connect-btn.do-connect {
+  background: #166534;
+  color: #86efac;
+}
+.connect-btn.do-disconnect {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+.connect-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Main panel ── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  gap: 28px;
+  overflow-y: auto;
+}
+
+#placeholder {
+  color: #555;
+  font-size: 1rem;
+  text-align: center;
+}
+
+#controls {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 420px;
+}
+
+#selected-mac {
+  font-family: monospace;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* ── Mode toggle ── */
+#mode-toggle {
+  display: flex;
+  background: #222;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+}
+.mode-btn {
+  border: none;
+  background: transparent;
+  color: #888;
+  padding: 6px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s, color 0.15s;
+}
+.mode-btn.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* ── Panels ── */
+#rgb-panel,
+#white-panel {
+  width: 100%;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+#rgb-panel.visible,
+#white-panel.visible {
+  display: flex;
+}
+
+/* ── Sliders ── */
+.slider-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.slider-row label {
+  font-size: 0.85rem;
+  color: #aaa;
+  display: flex;
+  justify-content: space-between;
+}
+.slider-row label span {
+  color: #fff;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+#kelvin-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #ff8c00, #fff9e6, #cce6ff);
+  outline: none;
+}
+#kelvin-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #555;
+  cursor: pointer;
+}
+
+/* ── Power off ── */
+#power-off-btn {
+  background: #7f1d1d;
+  color: #fca5a5;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 24px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+#power-off-btn:hover {
+  background: #991b1b;
+}

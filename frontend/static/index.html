@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lantern</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/iro.min.js"></script>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <h1>🔦 Lantern</h1>
+      <button id="discover-btn">
+        <div id="spinner"></div>
+        Discover lights
+      </button>
+      <div id="light-list"></div>
+    </div>
+
+    <!-- Main panel -->
+    <div id="main">
+      <div id="placeholder">Select a light to control it.</div>
+
+      <div id="controls">
+        <div id="selected-mac"></div>
+
+        <div id="mode-toggle">
+          <button class="mode-btn active" data-mode="white">White</button>
+          <button class="mode-btn" data-mode="rgb">RGB</button>
+        </div>
+
+        <!-- White (temperature) mode -->
+        <div id="white-panel" class="visible">
+          <div class="slider-row">
+            <label>Color temperature <span id="kelvin-val">4800 K</span></label>
+            <input
+              type="range"
+              id="kelvin-slider"
+              min="1000"
+              max="10000"
+              value="4800"
+              step="100"
+            />
+          </div>
+        </div>
+
+        <!-- RGB mode -->
+        <div id="rgb-panel">
+          <div id="color-wheel"></div>
+        </div>
+
+        <!-- Intensity (shared) -->
+        <div class="slider-row">
+          <label>Intensity <span id="intensity-val">100%</span></label>
+          <input
+            type="range"
+            id="intensity-slider"
+            min="0"
+            max="100"
+            value="100"
+            step="1"
+          />
+        </div>
+
+        <button id="power-off-btn">Power off</button>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
