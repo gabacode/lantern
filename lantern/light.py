@@ -1,6 +1,6 @@
 import re, struct
 
-from bluepy import btle
+from bleak import BleakScanner, BleakClient
 
 from lantern import color
 
@@ -8,7 +8,7 @@ from lantern import color
 class Light(object):
 
     LOCAL_NAME_MATCHER = re.compile("^YONGNUO.+")
-    TRANSMIT_UUID = "f000aa61-0451-4000-B000-000000000000"
+    TRANSMIT_UUID = "f000aa61-0451-4000-b000-000000000000"
     PACKET_TYPES = {
         'set_color': 0xa1,
         'set_white': 0xaa,
@@ -20,16 +20,16 @@ class Light(object):
     }
 
     @classmethod
-    def discover(cls, timeout=3.0):
+    async def discover(cls, timeout=3.0):
         """
         Perform a scan for all Yongnuo lights within range, returning Light 
         instances awaiting connection.
         """
-        lights =  []
-        scanner = btle.Scanner()
-        for dev in scanner.scan(timeout):
-            if cls.LOCAL_NAME_MATCHER.match(str(dev.getValueText(0x09))):
-                lights.append(cls(dev.addr))
+        lights = []
+        devices = await BleakScanner.discover(timeout=timeout)
+        for dev in devices:
+            if cls.LOCAL_NAME_MATCHER.match(str(dev.name)):
+                lights.append(cls(dev.address))
         return lights
 
     def __init__(self, addr):
@@ -40,36 +40,34 @@ class Light(object):
         self._mac = addr
         self._intensity = 1.0
         self._color = None
-        self._p = None
-        self._p_transmit = None
+        self._client = None
 
-    def connect(self):
+    async def connect(self):
         """
         Connect to the light.
         """
-        self._p = btle.Peripheral(self._mac, btle.ADDR_TYPE_RANDOM)
-        self._p_transmit = self._p.getCharacteristics(uuid=self.TRANSMIT_UUID)[0]
+        self._client = BleakClient(self._mac)
+        await self._client.connect()
 
-    def disconnect(self):
+    async def disconnect(self):
         """
         Disconnect from the light.
         """
-        self._p.disconnect()
-        self._p = None
-        self._p_transmit = None
+        await self._client.disconnect()
+        self._client = None
 
-    def _send_packet(self, cmd, v1, v2, v3):
+    async def _send_packet(self, cmd, v1, v2, v3):
         packet = struct.pack(">BBBBBB",
             0xAE, # start of packet
-            cmd, # command
+            cmd,  # command
             v1, v2, v3,
             0x56  # suffix
         )
-        if self._p_transmit is None:
+        if self._client is None:
             raise Exception("attempted to send command to disconnected light")
-        return self._p_transmit.write(packet)
+        await self._client.write_gatt_char(self.TRANSMIT_UUID, packet)
 
-    def update(self):
+    async def update(self):
         """
         Update the light with any changes made to color or intensity. This may 
         be safely called repeatedly with no ill effect, and is called 
@@ -81,28 +79,29 @@ class Light(object):
         if typ == self.COLOR_TYPES['rgb']:
             # take the HLS value, scale by intensity, and push an update packet
             r, g, b = target
-            return self._send_packet(
-                self.PACKET_TYPES['set_color'], 
-                round(r * self.intensity), 
-                round(g * self.intensity), 
-                round(b * self.intensity))
-        elif typ == self.COLOR_TYPES['temperature']:
-            # whenever possible, use high-CRI LEDs to render temperature
-            if target >= 3200 and target <= 5500:
-                percent_k55 = (target - 3200)/(5500 - 3200)
-                k5500 = percent_k55 * 100 * self.intensity
-                k3200 = (1.0 - percent_k55) * 100 * self.intensity
-                return self._send_packet(self.PACKET_TYPES['set_white'], 
-                    0x01, 
-                    round(k5500), 
-                    round(k3200))
-            # otherwise, attempt to render using RGB LEDs
-            r, g, b = color.temperature_to_rgb(target)
-            return self._send_packet(
+            await self._send_packet(
                 self.PACKET_TYPES['set_color'],
                 round(r * self.intensity),
                 round(g * self.intensity),
                 round(b * self.intensity))
+        elif typ == self.COLOR_TYPES['temperature']:
+            # whenever possible, use high-CRI LEDs to render temperature
+            if target >= 3200 and target <= 5500:
+                percent_k55 = (target - 3200) / (5500 - 3200)
+                k5500 = percent_k55 * 100 * self.intensity
+                k3200 = (1.0 - percent_k55) * 100 * self.intensity
+                await self._send_packet(self.PACKET_TYPES['set_white'],
+                    0x01,
+                    round(k5500),
+                    round(k3200))
+            # otherwise, attempt to render using RGB LEDs
+            else:
+                r, g, b = color.temperature_to_rgb(target)
+                await self._send_packet(
+                    self.PACKET_TYPES['set_color'],
+                    round(r * self.intensity),
+                    round(g * self.intensity),
+                    round(b * self.intensity))
         else:
             raise ValueError("unknown color type")
 
@@ -123,7 +122,6 @@ class Light(object):
         if new_intensity > 1.0 or new_intensity < 0:
             raise ValueError("intensity must be gte 0 and lte 1")
         self._intensity = new_intensity
-        self.update()
 
     @property
     def color(self):
@@ -154,7 +152,6 @@ class Light(object):
             self._color = (self.COLOR_TYPES['rgb'], value)
         else:
             raise ValueError("value must be integer or 3-tuple")
-        self.update()
 
     @property
     def color_temperature(self):
@@ -176,14 +173,13 @@ class Light(object):
         guaranteed.
         """
         self._color = (self.COLOR_TYPES['temperature'], value)
-        self.update()
 
-    def power_off(self):
+    async def power_off(self):
         """
         Power off the light. Changing the intensity, color, or color 
         temperature will power the light back on.
         """
-        self._send_packet(self.PACKET_TYPES['power_off'], 0x00, 0x00, 0x00)
-        
+        await self._send_packet(self.PACKET_TYPES['power_off'], 0x00, 0x00, 0x00)
+
     def __repr__(self):
         return "<Light({}) at {:x}>".format(self._mac, id(self))
